@@ -1,0 +1,132 @@
+datasource db {
+  provider = "sqlserver"
+  url      = "sqlserver://localhost:1433;database=ASS_DB_TEST;user=SA;password=16102002;encrypt=DANGER_PLAINTEXT"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Users {
+  UserID       Int      @id
+  FullName     String   @db.VarChar(50)
+  Email        String   @db.VarChar(50)
+  PhoneNumber  String   @db.VarChar(20)
+  Gender       String   @db.Char(1)
+  YearOfBirth  Int
+  Street       String   @db.VarChar(50)
+  City         String   @db.VarChar(50)
+  Province     String   @db.VarChar(50)
+  Accounts     Accounts[]
+  Students     Students? @relation("FK_Students_Users")
+  Tutors       Tutors?   @relation("FK_Tutors_Users")
+}
+
+model Subjects {
+  SubjectID            Int            @id
+  SubjectName          String         @db.VarChar(100)
+  Courses              Courses[]
+  Students             Students[]
+  Tutors               Tutors[]
+}
+
+model Courses {
+  CourseID       Int       @id
+  CourseName     String    @db.VarChar(50)
+  Description    String    @db.VarChar(200)
+  Capacity       Int
+  SubjectID      Int
+  MinNumOfStudents Int
+  Tests          Tests[]
+  StudyCourses   StudyCourses[]
+  Schedules      Schedules[]
+  TeachesCourses TeachesCourses[]
+  Subjects       Subjects  @relation(fields: [SubjectID], references: [SubjectID])
+}
+
+model Accounts {
+  AccountID   Int    @id
+  Username    String @db.VarChar(50)
+  AccessLevel String @db.VarChar(20)
+  Password    String @db.VarChar(20)
+  Role        String @db.Char(1)
+  UserID      Int
+  Users       Users  @relation(fields: [UserID], references: [UserID])
+}
+
+model Students {
+  StudentID            Int            @id
+  Class                String         @db.VarChar(2)
+  SubjectWantToLearnID Int
+  Tests                Tests[]
+  StudyCourses         StudyCourses[]
+  Ratings              Ratings[]
+  Users                Users          @relation("FK_Students_Users", fields: [StudentID], references: [UserID])
+  Subjects             Subjects       @relation(fields: [SubjectWantToLearnID], references: [SubjectID])
+}
+
+model Tests {
+  TestID     Int     @id
+  MinTest    Float
+  MidtermExam Float
+  FinalExam  Float
+  CourseID   Int
+  StudentID  Int
+  Courses    Courses @relation(fields: [CourseID], references: [CourseID], onDelete: NoAction, onUpdate: NoAction)
+  Students   Students @relation(fields: [StudentID], references: [StudentID])
+}
+
+model StudyCourses {
+  StudentID Int
+  CourseID  Int
+  Courses   Courses  @relation(fields: [CourseID], references: [CourseID], onDelete: NoAction, onUpdate: NoAction)
+  Students  Students @relation(fields: [StudentID], references: [StudentID])
+
+  @@id([StudentID, CourseID])
+}
+
+model Schedules {
+  CourseID    Int
+  ScheduleDate DateTime
+  ScheduleTime DateTime
+  ScheduleID  Int     @id
+  Courses     Courses @relation(fields: [CourseID], references: [CourseID])
+}
+
+model Tutors {
+  TutorID             Int      @id @unique
+  SubjectWantToTeachID Int
+  TutorProfiles       TutorProfiles[]
+  TeachesCourses      TeachesCourses[]
+  Ratings             Ratings[]
+  Users               Users          @relation("FK_Tutors_Users", fields: [TutorID], references: [UserID])
+  Subjects            Subjects       @relation(fields: [SubjectWantToTeachID], references: [SubjectID])
+}
+
+model TutorProfiles {
+  TutorProfileID Int      @id @unique
+  Certificate    String   @db.VarChar(50)
+  SoftSkill      String   @db.VarChar(100)
+  Experience     String   @db.VarChar(100)
+  Tutors         Tutors   @relation(fields: [TutorProfileID], references: [TutorID])
+}
+
+model TeachesCourses {
+  TutorID Int
+  CourseID Int
+  Tutors  Tutors  @relation(fields: [TutorID], references: [TutorID])
+  Courses Courses @relation(fields: [CourseID], references: [CourseID], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([TutorID, CourseID])
+}
+
+model Ratings {
+  StudentID Int
+  RatingID  Int
+  TutorID   Int
+  Score     Float
+  Students  Students @relation(fields: [StudentID], references: [StudentID], onDelete: NoAction, onUpdate: NoAction)
+  Tutors    Tutors   @relation(fields: [TutorID], references: [TutorID])
+
+  @@id([StudentID, RatingID])
+}
